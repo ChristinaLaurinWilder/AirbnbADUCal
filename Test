@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Availability Calendar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.css">
+    <style>
+        #calendar {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="calendar"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/5.10.1/main.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.4.0/ical.min.js"></script>
+    <script src="calendar.js"></script>
+</body>
+</html>
+document.addEventListener('DOMContentLoaded', function () {
+    fetch('https://www.airbnb.com/calendar/ical/1071831160641615770.ics?s=3c3cfb0ba9198407faabcf36accea17c')
+        .then(response => response.text())
+        .then(data => {
+            const jcalData = ICAL.parse(data);
+            const comp = new ICAL.Component(jcalData);
+            const events = comp.getAllSubcomponents('vevent');
+
+            const eventDates = events.map(event => {
+                const startDate = new ICAL.Time.fromString(event.getFirstPropertyValue('dtstart')).toJSDate();
+                const endDate = new ICAL.Time.fromString(event.getFirstPropertyValue('dtend')).toJSDate();
+
+                return {
+                    start: startDate,
+                    end: endDate,
+                    title: event.getFirstPropertyValue('summary')
+                };
+            });
+
+            initCalendar(eventDates);
+        })
+        .catch(error => console.error('Error fetching the ICS file:', error));
+});
+
+function initCalendar(events) {
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: events,
+        eventColor: '#ff9f89'
+    });
+
+    calendar.render();
+}
